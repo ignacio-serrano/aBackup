@@ -25,6 +25,39 @@ CALL :findOutInstall "%~0" installDir
 REM CALL :loadProperties "%installDir%\git-backup.properties"
 
 :::::::::::::::::::::::::::::::::::: PROCESS :::::::::::::::::::::::::::::::::::
+:: Change -1 to -9 for optimal compression size.
+:: -AC can be used to remove the "archive" attribute of zipped files.
+:: -AS can be used to process only the files with the "archive" attribute set.
+:: Of course, it would be ideal to combine both.
+REM ZIP -1 -r D:\prueba\prueba.zip .
+
+FOR /F "skip=1 tokens=1-6 delims= " %%i IN ('wmic path Win32_LocalTime Get Day^,Hour^,Minute^,Month^,Second^,Year /Format:table') DO (
+	IF NOT "%%~n"=="" (
+		SET currentYear=%%n
+		SET currentMonth=%%l
+		IF !currentMonth! LSS 10 (
+			SET currentMonth=0!currentMonth!
+		)
+		SET currentDay=%%i
+		IF !currentDay! LSS 10 (
+			SET currentDay=0!currentDay!
+		)
+		SET currentHour=%%j
+		IF !currentHour! LSS 10 (
+			SET currentHour=0!currentHour!
+		)
+		SET currentMinute=%%k
+		IF !currentMinute! LSS 10 (
+			SET currentMinute=0!currentMinute!
+		)
+		SET currentSecond=%%m
+		IF !currentSecond! LSS 10 (
+			SET currentSecond=0!currentSecond!
+		)
+		SET currentTimestamp=!currentYear!!currentMonth!!currentDay!!currentHour!!currentMinute!!currentSecond!
+	)
+)
+SET currentTimestamp
 
 GOTO :exit
 :::::::::::::::::::::::::::::::::: POSTPROCESS :::::::::::::::::::::::::::::::::

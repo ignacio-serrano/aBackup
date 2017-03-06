@@ -5,16 +5,25 @@ A quick and dirty backup tool for Windows
 
 TODO:
 -----
-
-  * Everything else is to be done.
+  * Find a way to schedule execution of a bat file (see SchTasks.exe).
+  * Find out how to get a timestamp for the zip filename.
+  * \[DONE\] Find a command which can zip what I want to.
     * ...
   * \[DONE\] Create this repository.
 
 Project layout
 --------------
   * `src`: Here it is where source code is.
-    * `main`: Here it is where source code meant to be part of the application lives. It is here just in case I want to add a `test` directory some day.
+    * `main`: Here it is where source code meant to be part of the application
+              lives. It is here just in case I want to add a `test` directory
+              some day.
+  * `cmd`: Useful executables for development.
 
+Technical notes
+---------------
+In order to simplify user commands, it could be interesting to keep some
+configuration files in a global or user dependant path. I'm thinking in wherever
+`%USERPROFILE%` points to.
 
 ---
 Below, a markdown cheatsheet.
