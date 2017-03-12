@@ -7,7 +7,8 @@ TODO:
 -----
   * Find a way to schedule execution of a bat file (see SchTasks.exe).
   * \[DONE\] Make aBackup.bat to allow to do custom on-demand backups.
-  * \[DONE\] :findoutInstall seems unable to identify the installation dirctory in the PATH when the program is invoked without extension. Fix it.
+  * \[DONE\] :findoutInstall seems unable to identify the installation directory
+    in the PATH when the program is invoked without extension. Fix it.
   * \[DONE: Or so it seems, in rinse-n-repeat.bat\] Find out how to get a timestamp for the zip filename.
   * \[DONE\] Find a command which can zip what I want to.
     * ...
@@ -20,6 +21,8 @@ Project layout
               lives. It is here just in case I want to add a `test` directory
               some day.
   * `cmd`: Useful executables for development.
+  * `dependencies`: Contains third party libraries and installers required by
+                    `aBackup` for easier installation.
 
 Technical notes
 ---------------
