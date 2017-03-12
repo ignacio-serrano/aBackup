@@ -1,20 +1,17 @@
 ::<?xml version="1.0" encoding="Cp850"?><contenido><![CDATA[
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-:: PROGRAM ®rinse-n-repeat¯
+:: PROGRAM ®init-dev-cmd¯
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-::    It allows to test code you are not really sure how/if would work.
+::    ${description}
 ::
 :: USAGE:
-::    rinse-n-repeat.bat
+::    init-dev-cmd.bat
 ::
-:: DEPENDENCIES: :findOutInstall
+:: DEPENDENCIES: :findOutInstall :loadProperties
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 @ECHO OFF
 SETLOCAL EnableDelayedExpansion
 :::::::::::::::::::::::::::::::::: PREPROCESS ::::::::::::::::::::::::::::::::::
-:: This variable will be used to manage the final ERRORLEVEL of the program.
-SET errLvl=0
-
 :: This program admits no parameters right now.
 REM CALL :parseParameters %*
 REM IF ERRORLEVEL 1 (
@@ -22,45 +19,71 @@ REM 	SET errLvl=1
 REM 	GOTO :exit
 REM )
 CALL :findOutInstall "%~0" installDir
-REM CALL :loadProperties "%installDir%\git-backup.properties"
+CALL :loadProperties "%installDir%\init-dev-cmd.properties"
 
 :::::::::::::::::::::::::::::::::::: PROCESS :::::::::::::::::::::::::::::::::::
+TITLE %title%
+SET addToPath=%CD%
 
-FOR /F "skip=1 tokens=1-6 delims= " %%i IN ('wmic path Win32_LocalTime Get Day^,Hour^,Minute^,Month^,Second^,Year /Format:table') DO (
-	IF NOT "%%~n"=="" (
-		SET currentYear=%%n
-		SET currentMonth=%%l
-		IF !currentMonth! LSS 10 (
-			SET currentMonth=0!currentMonth!
-		)
-		SET currentDay=%%i
-		IF !currentDay! LSS 10 (
-			SET currentDay=0!currentDay!
-		)
-		SET currentHour=%%j
-		IF !currentHour! LSS 10 (
-			SET currentHour=0!currentHour!
-		)
-		SET currentMinute=%%k
-		IF !currentMinute! LSS 10 (
-			SET currentMinute=0!currentMinute!
-		)
-		SET currentSecond=%%m
-		IF !currentSecond! LSS 10 (
-			SET currentSecond=0!currentSecond!
-		)
-		SET currentTimestamp=!currentYear!!currentMonth!!currentDay!!currentHour!!currentMinute!!currentSecond!
-	)
-)
-SET currentTimestamp
+:: Directory change is lost on ENDLOCAL. Instead, it PUSHD from the intended 
+:: final directory and POPD after ENDLOCAL (achieving the same result).
+CD %installDir%\%startIn%
+PUSHD C:
 
 GOTO :exit
 :::::::::::::::::::::::::::::::::: POSTPROCESS :::::::::::::::::::::::::::::::::
 :exit
-
-EXIT /B %errLvl% & ENDLOCAL
+ENDLOCAL & SET PATH=%PATH%;%addToPath%
+POPD
+EXIT /B 0
 
 :::::::::::::::::::::::::::::::::: SUBROUTINES :::::::::::::::::::::::::::::::::
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+:: BEGINNING: SUBROUTINE ®doCopy¯
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+::    Copies the directory or file passed as parameter using the most appropiate 
+:: method.
+:: 
+:: USAGE: 
+::    CALL :doCopy ®["]path["]¯
+:: WHERE...
+::    ®["]path["]¯: Path of the file or directory to copy, relative to the 
+::                  directory where git-backup.bat lives. If the path contains 
+::                  white spaces, it must be enclosed in double quotes. It is 
+::                  optional otherwise.
+::
+:: DEPENDENCIES: NONE
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+:doCopy
+SETLOCAL
+
+SET errLvl=0
+SET srcPath=%installDir%\%~1
+SET tgtPath=%chosenLocalGitRepository%\%~1
+
+:: If the path is a directory (note the trailing "\") uses ROBOCOPY. Most flags 
+:: are just to prevent ROBOCOPY to output anything. "/E" is to ensure that 
+:: empty subfolders are copied as well.
+:: If the path is a file uses COPY. It could be done by means of ROBOCOPY but 
+:: syntax would more complex.
+:: If the path doesn't exist simply warns that it doesn't exist and will be 
+:: skipped.
+IF EXIST "%srcPath%\" (
+	ECHO Copying "%srcPath%"
+	ROBOCOPY "%srcPath%" "%tgtPath%" /E /NFL /NDL /NJH /NJS /NP
+
+) ELSE IF EXIST "%srcPath%" (
+	ECHO Copying "%srcPath%"
+	>NUL COPY "%srcPath%" "%tgtPath%"
+) ELSE (
+	ECHO SKIPPING "%srcPath%" ^(doesn't exist^)
+)
+
+ENDLOCAL & EXIT /B %errLvl%
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+:: END: SUBROUTINE ®doCopy¯
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 :: BEGINNING: SUBROUTINE ®findOutInstall¯
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::

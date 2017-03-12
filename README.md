@@ -6,7 +6,9 @@ A quick and dirty backup tool for Windows
 TODO:
 -----
   * Find a way to schedule execution of a bat file (see SchTasks.exe).
-  * Find out how to get a timestamp for the zip filename.
+  * \[DONE\] Make aBackup.bat to allow to do custom on-demand backups.
+  * \[DONE\] :findoutInstall seems unable to identify the installation dirctory in the PATH when the program is invoked without extension. Fix it.
+  * \[DONE: Or so it seems, in rinse-n-repeat.bat\] Find out how to get a timestamp for the zip filename.
   * \[DONE\] Find a command which can zip what I want to.
     * ...
   * \[DONE\] Create this repository.
