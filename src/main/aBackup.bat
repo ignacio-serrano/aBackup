@@ -136,7 +136,7 @@ IF NOT DEFINED aux (
 	TYPE "%installDir%\help.txt"
 	EXIT /B -1
 )
-ECHO DEBUG:aux=%aux%
+REM ECHO DEBUG:aux=%aux%
 SET aux=
 
 IF "%~1" == "now" (
@@ -209,12 +209,18 @@ EXIT /B 0
 :now
 SETLOCAL EnableDelayedExpansion
 
-ECHO DEBUG: param.command=%param.command%
-ECHO DEBUG: param.source=%param.source%
-ECHO DEBUG: param.repository=%param.repository%
+REM ECHO DEBUG: param.command=%param.command%
+REM ECHO DEBUG: param.source=%param.source%
+REM ECHO DEBUG: param.repository=%param.repository%
+
+CALL :validateProgramAvailable zip.exe
+SET errLvl=%ERRORLEVEL%
+IF "%errLvl%" NEQ "0" (
+	GOTO :exit
+)
 
 CALL :getCurrentTimestampNumber currentTimestamp
-ECHO DEBUG: currentTimestamp=%currentTimestamp%
+REM ECHO DEBUG: currentTimestamp=%currentTimestamp%
 
 :: Change -1 to -9 for optimal compression size.
 :: -AC can be used to remove the "archive" attribute of zipped files.
@@ -343,7 +349,7 @@ EXIT /B 0
 SETLOCAL
 SET errLvl=0
 IF "%~$PATH:1" == "" (
-	ECHO ERROR: Program ®%1¯ cannot be found in PATH. git-backup requires a ®%1¯ installation to work.
+	ECHO ERROR: Program ®%1¯ cannot be found in PATH. A ®%1¯ installation is needed to work.
 	SET errLvl=1
 )
 ENDLOCAL & EXIT /B %errLvl%
@@ -370,7 +376,7 @@ SETLOCAL EnableDelayedExpansion
 SET retVar=%1
 
 FOR /F "skip=1 tokens=1-6 delims= " %%i IN ('wmic path Win32_LocalTime Get Day^,Hour^,Minute^,Month^,Second^,Year /Format:table') DO (
-	IF NOT "%%~n"=="" (
+	IF NOT "%%~n" == "" (
 		SET currentYear=%%n
 		SET currentMonth=%%l
 		IF !currentMonth! LSS 10 (
