@@ -349,7 +349,7 @@ EXIT /B 0
 SETLOCAL
 SET errLvl=0
 IF "%~$PATH:1" == "" (
-	ECHO ERROR: Program ®%1¯ cannot be found in PATH. A ®%1¯ installation is needed to work.
+	ECHO ERROR: Program ®%1¯ cannot be found in PATH. A ®%1¯ installation is required.
 	SET errLvl=1
 )
 ENDLOCAL & EXIT /B %errLvl%
