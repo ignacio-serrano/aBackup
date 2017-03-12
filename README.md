@@ -5,7 +5,11 @@ A quick and dirty backup tool for Windows
 
 TODO:
 -----
+  * Investigate how to make a simple installer/uninsitaller.
+    * Take a look at [IEXPRESS](https://ss64.com/nt/iexpress.html).
   * Find a way to schedule execution of a bat file (see SchTasks.exe).
+  * Add an -L option to display licenses.
+  * Implement command `restore`.
   * \[DONE\] Make aBackup.bat to allow to do custom on-demand backups.
   * \[DONE\] :findoutInstall seems unable to identify the installation directory
     in the PATH when the program is invoked without extension. Fix it.

@@ -141,6 +141,32 @@ SET aux=
 
 IF "%~1" == "now" (
 	SET param.command=now
+	IF "%~2" == "" (
+		SET "param.repository= "
+	) ELSE (
+		SET param.repository=%~2
+	)
+	
+	IF "%~3" == "" (
+		SET param.source=.
+	) ELSE (
+		SET param.source=%param.repository%
+		SET param.repository=%~3
+	)
+) ELSE IF "%~1" == "init" (
+	SET param.command=init
+	IF "%~2" == "" (
+		ECHO ERROR: Missing parameter {repository}.
+		EXIT /B 1
+	)
+
+	SET param.repository=%~2
+	IF "%~3" == "" (
+		SET param.source=.
+	) ELSE (
+		SET param.source=%param.repository%
+		SET param.repository=%~3
+	)
 ) ELSE IF "%~1" == "help" (
 	SET param.command=help
 	SET param.helpTopic=%~2
@@ -148,20 +174,6 @@ IF "%~1" == "now" (
 ) ELSE (
 	ECHO ERROR: Unknown command ®%~1¯.
 	EXIT /B 1
-)
-SHIFT
-
-IF "%~1" == "" (
-	ECHO ERROR: Missing parameter {repository}.
-	EXIT /B 1
-)
-
-SET param.repository=%~1
-IF "%~2" == "" (
-	SET param.source=.
-) ELSE (
-	SET param.source=%param.repository%
-	SET param.repository=%~2
 )
 
 EXIT /B 0
@@ -186,6 +198,8 @@ IF NOT DEFINED param.helpTopic (
 	TYPE "%installDir%\help.txt"
 ) ELSE IF "%param.helpTopic%" == "now" (
 	TYPE "%installDir%\help-now.txt"
+) ELSE IF "%param.helpTopic%" == "init" (
+	TYPE "%installDir%\help-init.txt"
 ) ELSE (
 	ECHO ERROR: Unknown command ®%param.helpTopic%¯.
 	EXIT /B 1
@@ -219,6 +233,24 @@ IF "%errLvl%" NEQ "0" (
 	GOTO :exit
 )
 
+IF "%param.repository%" == " " (
+	REM ECHO DEBUG: Repo is SPACE.
+	IF EXIST "%param.source%\.aBackup" (
+		CALL :loadProperties "%param.source%\.aBackup"
+		IF EXIST "!repository!" (
+			SET param.repository=!repository!
+		) ELSE (
+			ECHO ERROR: Broken meta data file ®%param.source%\.aBackup¯.
+			EXIT /B 2
+		)
+	) ELSE (
+		CALL :canonicalizePath "%param.source%" canonicalPath
+		
+		ECHO ERROR: ®!canonicalPath!¯ is not initialized and parameter {repository} is not specified.
+		EXIT /B 1
+	)
+)
+
 CALL :getCurrentTimestampNumber currentTimestamp
 REM ECHO DEBUG: currentTimestamp=%currentTimestamp%
 
@@ -226,12 +258,38 @@ REM ECHO DEBUG: currentTimestamp=%currentTimestamp%
 :: -AC can be used to remove the "archive" attribute of zipped files.
 :: -AS can be used to process only the files with the "archive" attribute set.
 :: Of course, it would be ideal to combine both.
->NUL ZIP -%compressionLevel% -r "%param.repository%\aBackup-%currentTimestamp%.zip" "%param.source%"
+>NUL ZIP -%compressionLevel% -r "%param.repository%\aBackup-%currentTimestamp%.zip" "%param.source%" -x .aBackup
 SET errLvl=%ERRORLEVEL%
 
 ENDLOCAL & EXIT /B %errLvl%
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-:: END: SUBROUTINE ®help¯
+:: END: SUBROUTINE ®now¯
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+:: BEGINNING: SUBROUTINE ®init¯
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+::    Adds the files needed for a directory to be repeatedly backed up.
+:: 
+:: USAGE: 
+::    CALL :init
+::
+:: DEPENDENCIES: NONE
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+:init
+SETLOCAL EnableDelayedExpansion
+
+REM ECHO DEBUG: param.source=%param.source%
+REM ECHO DEBUG: param.repository=%param.repository%
+
+CALL :canonicalizePath "%param.repository%" canonicalPath
+REM ECHO DEBUG: canonicalPath=%canonicalPath%
+
+>"%param.source%\.aBackup" ECHO repository=%canonicalPath%
+
+ENDLOCAL & EXIT /B 0
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+:: END: SUBROUTINE ®init¯
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -406,4 +464,27 @@ ENDLOCAL & SET "%retVar%=%currentTimestamp%" & EXIT /B 0
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 :: END: SUBROUTINE ®getCurrentTimestampNumber¯
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+:: BEGINNING: SUBROUTINE ®canonicalizePath¯
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+::    Gets the canonical form of a path.
+:: 
+:: USAGE: 
+::    CALL :canonicalizePath ®["]path["]¯ ®retVar¯
+:: WHERE...
+::    ®["]path["]¯: Path to canonicalize. If the path contains white spaces, it
+::                  must be enclosed in double quotes. It is optional 
+::                  otherwise.
+::    ®retVar¯:     Name of a variable (existent or not) by means of which the 
+::                  canonical path will be returned.
+::
+:: DEPENDENCIES: NONE
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+:canonicalizePath
+SET "%2=%~f1" & EXIT /B 0
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+:: END: SUBROUTINE ®canonicalizePath¯
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
 ::]]></contenido>

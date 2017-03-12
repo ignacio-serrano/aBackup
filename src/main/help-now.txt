@@ -1,11 +1,14 @@
 
-aBackup.bat - A quick and dirty backup tool for Windows.
+Backups a directory.
 
 Syntax:
-   aBackup now [{directory to backup}] {repository}
+   aBackup now [{directory to backup}] [{repository}]
 
-Commands:
+Parameters:
    directory to backup: Optional directory to be backed up. If not specified, 
                         current directory will be backed up.
-   repository:          Directory to store the backup file.
+   repository:          Directory to store the backup file. It isn't necessary
+                        if {directory to backup} has been previously configured
+						to be backed up by calling "aBackup init" (run 
+						"aBackup help init" for details).
 

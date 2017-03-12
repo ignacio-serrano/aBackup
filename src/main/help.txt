@@ -1,5 +1,5 @@
 
-aBackup.bat - A quick and dirty backup tool for Windows.
+aBackup.bat - v0.0.1 - A quick and dirty backup tool for Windows.
 
 Syntax:
    aBackup [help] {command}
@@ -7,3 +7,5 @@ Syntax:
 Commands:
    help: Displays help about a given command.
    now:  Makes a backup of a directory and saves it in another directory.
+   init: Prepares a directory for repetitive backups.
+
