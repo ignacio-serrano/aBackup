@@ -1,0 +1,11 @@
+
+Prepares a directory for repetitive backups.
+
+Syntax:
+   aBackup init [{directory to backup}] {repository}
+
+Parameters:
+   directory to backup: Optional directory to be backed up. If not specified, 
+                        current directory will be backed up.
+   repository:          Directory to store backup files.
+
