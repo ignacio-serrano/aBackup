@@ -5,17 +5,27 @@ A quick and dirty backup tool for Windows
 
 TODO:
 -----
+  * Make configuranble how many backups must be kept in a repository before
+    removing the oldest one.
+  * `restore` command always asks to choose one backup (unless there is only
+    one in the repository). Add a parameter to allow choosing one beforehand.
+    This way, user interaction can be optional.
+  * `restore` command doesn't have into account that there can be files already
+    existing in the target directory which may have to deleted. Add parameters
+    to handle that.
+  * Repositories only allow to backup one directory. Enable several different
+    directories.
   * Investigate how to make a simple installer/uninsitaller.
     * Take a look at [IEXPRESS](https://ss64.com/nt/iexpress.html).
   * Find a way to schedule execution of a bat file (see SchTasks.exe).
   * Add an -L option to display licenses.
-  * Implement command `restore`.
+  * \[DONE\] Implement command `restore`.
+    * \[DONE\] Offer the user the possibility to choose between all the backups.
   * \[DONE\] Make aBackup.bat to allow to do custom on-demand backups.
   * \[DONE\] :findoutInstall seems unable to identify the installation directory
     in the PATH when the program is invoked without extension. Fix it.
   * \[DONE: Or so it seems, in rinse-n-repeat.bat\] Find out how to get a timestamp for the zip filename.
   * \[DONE\] Find a command which can zip what I want to.
-    * ...
   * \[DONE\] Create this repository.
 
 Project layout

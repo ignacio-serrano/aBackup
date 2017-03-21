@@ -127,7 +127,7 @@ EXIT /B %errLvl% & ENDLOCAL
 :: DEPENDENCIES: NONE
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 :parseParameters
-:: Since parameters can contain quotes and other string separators, they it is 
+:: Since parameters can contain quotes and other string separators, it is 
 :: not reliable to compare them with the empty string. Instead, a variable is 
 :: set, and if it is defined aftewards, it means that something has been passed 
 :: as parameter.
@@ -140,7 +140,7 @@ REM ECHO DEBUG:aux=%aux%
 SET aux=
 
 IF "%~1" == "now" (
-	SET param.command=now
+	SET param.command=%~1
 	IF "%~2" == "" (
 		SET "param.repository= "
 	) ELSE (
@@ -154,7 +154,7 @@ IF "%~1" == "now" (
 		SET param.repository=%~3
 	)
 ) ELSE IF "%~1" == "init" (
-	SET param.command=init
+	SET param.command=%~1
 	IF "%~2" == "" (
 		ECHO ERROR: Missing parameter {repository}.
 		EXIT /B 1
@@ -167,8 +167,21 @@ IF "%~1" == "now" (
 		SET param.source=%param.repository%
 		SET param.repository=%~3
 	)
+) ELSE IF "%~1" == "restore" (
+	SET param.command=%~1
+	IF "%~2" == "" (
+		SET "param.repository= "
+	) ELSE (
+		SET param.repository=%~2
+	)
+	
+	IF "%~3" == "" (
+		SET param.target=.
+	) ELSE (
+		SET param.target=%~3
+	)
 ) ELSE IF "%~1" == "help" (
-	SET param.command=help
+	SET param.command=%~1
 	SET param.helpTopic=%~2
 	EXIT /B 0
 ) ELSE (
@@ -197,9 +210,11 @@ SETLOCAL EnableDelayedExpansion
 IF NOT DEFINED param.helpTopic (
 	TYPE "%installDir%\help.txt"
 ) ELSE IF "%param.helpTopic%" == "now" (
-	TYPE "%installDir%\help-now.txt"
+	TYPE "%installDir%\help-%param.helpTopic%.txt"
 ) ELSE IF "%param.helpTopic%" == "init" (
-	TYPE "%installDir%\help-init.txt"
+	TYPE "%installDir%\help-%param.helpTopic%.txt"
+) ELSE IF "%param.helpTopic%" == "restore" (
+	TYPE "%installDir%\help-%param.helpTopic%.txt"
 ) ELSE (
 	ECHO ERROR: Unknown command ®%param.helpTopic%¯.
 	EXIT /B 1
@@ -264,6 +279,99 @@ SET errLvl=%ERRORLEVEL%
 ENDLOCAL & EXIT /B %errLvl%
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 :: END: SUBROUTINE ®now¯
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+:: BEGINNING: SUBROUTINE ®restore¯
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+::    Restores a backup from the repository to param.target.
+:: 
+:: USAGE: 
+::    CALL :restore
+::
+:: DEPENDENCIES: :strLen :validateProgramAvailable
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+:restore
+SETLOCAL EnableDelayedExpansion
+
+CALL :validateProgramAvailable unzip.exe
+SET errLvl=%ERRORLEVEL%
+IF "%errLvl%" NEQ "0" (
+	GOTO :exit
+)
+
+:: If {repository} parameter isn't set, looks for a previously configured 
+:: repository in the metadata file.
+IF "%param.repository%" == " " (
+	IF EXIST "%param.target%\.aBackup" (
+		CALL :loadProperties "%param.target%\.aBackup"
+		IF EXIST "!repository!" (
+			SET param.repository=!repository!
+		) ELSE (
+			ECHO ERROR: Broken meta data file ®%param.target%\.aBackup¯.
+			EXIT /B 2
+		)
+	) ELSE (
+		CALL :canonicalizePath "%param.target%" canonicalPath
+		
+		ECHO ERROR: ®!canonicalPath!¯ is not initialized and parameter {repository} is not specified.
+		EXIT /B 1
+	)
+)
+
+:: Analizes repository dirctory identifying all backups.
+CALL :strLen "aBackup-" prefixLength
+SET backups.length=0
+FOR /F "usebackq tokens=* delims=:" %%i IN (`DIR /B /O:-N "%param.repository%"\aBackup-*`) DO (
+	SET backups[!backups.length!].file=%%i
+	SET /A "startAt=prefixLength"
+	CALL SET backups[!backups.length!].year=%%backups[!backups.length!].file:~!startAt!,4%%
+	SET /A "startAt+=4"
+	CALL SET backups[!backups.length!].month=%%backups[!backups.length!].file:~!startAt!,2%%
+	SET /A "startAt+=2"
+	CALL SET backups[!backups.length!].day=%%backups[!backups.length!].file:~!startAt!,2%%
+	SET /A "startAt+=2"
+	CALL SET backups[!backups.length!].hour=%%backups[!backups.length!].file:~!startAt!,2%%
+	SET /A "startAt+=2"
+	CALL SET backups[!backups.length!].minute=%%backups[!backups.length!].file:~!startAt!,2%%
+	SET /A "startAt+=2"
+	CALL SET backups[!backups.length!].second=%%backups[!backups.length!].file:~!startAt!,2%%
+	SET /A "backups.length+=1"
+)
+SET /A "backups.lastIndex=backups.length-1"
+
+:: If there are more than one, asks the user to choose one.
+IF "%backups.length%" GTR "1" (
+	ECHO There are more than one backups in the repository:
+	ECHO    #  Year Month Day Hour Minute Second
+	FOR /L %%i IN (0,1,%backups.lastIndex%) DO (
+		ECHO    %%i: !backups[%%i].year! !backups[%%i].month!    !backups[%%i].day!  !backups[%%i].hour!   !backups[%%i].minute!     !backups[%%i].second!     !backups[%%i].file!
+	)
+	SET /P answer=Which one do you want to restore?: 
+	IF "!answer!" GEQ "0" (
+		IF "!answer!" LEQ "%backups.lastIndex%" (
+			CALL SET theBackup=%%backups[!answer!].file%%
+		) ELSE (
+			ECHO ERROR: ®!answer!¯ is an invalid input. Input a number from the list.
+			EXIT /B 1
+		)
+	) ELSE (
+		ECHO ERROR: ®!answer!¯ is an invalid input. Input a number from the list.
+		EXIT /B 1
+	)
+) ELSE IF "%backups.length%" EQU "0" (
+	ECHO ERROR: No backups found in repository ®!param.repository!¯.
+	SET EXIT /B 1
+) ElSE (
+	SET theBackup=!backups[0].file!
+)
+
+:: Finally, unzips the backup file in the target directory.
+UNZIP -qq "%param.repository%\%theBackup%" -d "%param.target%"
+
+ENDLOCAL & EXIT /B %errLvl%
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+:: END: SUBROUTINE ®restore¯
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -487,4 +595,41 @@ SET "%2=%~f1" & EXIT /B 0
 :: END: SUBROUTINE ®canonicalizePath¯
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+:: BEGINNING: SUBROUTINE ®strLen¯
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+::    Gets the length of a string.
+::
+::    All credits to "jeb" who provided this algorithm for counting characters 
+:: at http://stackoverflow.com/questions/5837418/how-do-you-get-the-string-length-in-a-batch-file
+:: 
+:: USAGE: 
+::    CALL :strLen ®["]string["]¯ ®retVar¯
+:: WHERE...
+::    ®["]string["]¯: The string to count characters from. If the string can 
+::                    contains white spaces, it must be enclosed in double 
+::                    quotes. It is optional otherwise.
+::    ®retVar¯:       Name of a variable (existent or not) by means of which 
+::                    the number of characters will be returned.
+::
+:: DEPENDENCIES: NONE
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+:strLen
+SETLOCAL EnableDelayedExpansion
+
+SET str=%~1#
+SET retVar=%2
+SET len=0
+
+FOR %%i IN (4096 2048 1024 512 256 128 64 32 16 8 4 2 1) DO (
+	IF "!str:~%%i,1!" NEQ "" ( 
+		SET /A "len+=%%i"
+		SET str=!str:~%%i!
+	)
+)
+
+ENDLOCAL & SET "%retVar%=%len%" & EXIT /B 0
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+:: END: SUBROUTINE ®strLen¯
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 ::]]></contenido>

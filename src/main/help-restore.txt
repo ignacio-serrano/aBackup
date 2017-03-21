@@ -1,0 +1,14 @@
+
+Restores a previous backup.
+
+Syntax:
+   aBackup restore [{repository}] [{target directory}]
+
+Parameters:
+   repository:       Directory where the backup is stored. Optional if 
+                     {target directory} has been previously configured to be 
+                     backed up by calling "aBackup init" (run "aBackup help 
+                     init" for details).
+   target directory: Directory where to put the backed up files. If not 
+                     specified, they will be put in current directory.
+
